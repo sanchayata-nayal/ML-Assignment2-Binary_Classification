@@ -1,35 +1,40 @@
 import pandas as pd
-import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
-# 1. Load Dataset
-df = pd.read_csv('framingham_heart_study.csv')
+def prepare_data(filepath='framingham.csv'):
+    """
+    Loads data, drops nulls, splits into train/test, and scales features.
+    Returns: X_train_scaled, X_test_scaled, y_train, y_test, scaler, feature_names
+    """
+    # 1. Load Dataset
+    try:
+        df = pd.read_csv(filepath)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Could not find {filepath}. Check the path!")
 
-print(f"Original shape: {df.shape}")
+    # 2. Handle Missing Values
+    df_clean = df.dropna()
+    
+    # 3. Define Features (X) and Target (y)
+    target_col = 'TenYearCHD'
+    X = df_clean.drop(columns=[target_col])
+    y = df_clean[target_col]
+    feature_names = X.columns.tolist()
 
-# 2. Handle Missing Values
-# Dropping rows with any NaN values
-df_clean = df.dropna()
-print(f"Shape after dropping nulls: {df_clean.shape}")
+    # 4. Train-Test Split (80% Train, 20% Test)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
 
-# 3. Define Features (X) and Target (y)
-# The target for Framingham is 'TenYearCHD'
-target_col = 'TenYearCHD'
-X = df_clean.drop(columns=[target_col])
-y = df_clean[target_col]
+    # 5. Feature Scaling
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+    
+    return X_train_scaled, X_test_scaled, y_train, y_test, scaler, feature_names
 
-# 4. Train-Test Split (80% Train, 20% Test)
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y
-)
-
-# 5. Feature Scaling
-scaler = StandardScaler()
-X_train_scaled = scaler.fit_transform(X_train)
-X_test_scaled = scaler.transform(X_test)
-
-print("\nData Preparation Complete.")
-print(f"Training samples: {X_train.shape[0]}")
-print(f"Testing samples: {X_test.shape[0]}")
-print(f"Features count: {X_train.shape[1]}") # Should be > 12
+if __name__ == "__main__":
+    # This block only runs if you execute 'python data_prep.py' directly
+    X_tr, X_te, y_tr, y_te, _, _ = prepare_data()
+    print(f"Data Prep Test Passed. Training shape: {X_tr.shape}")
