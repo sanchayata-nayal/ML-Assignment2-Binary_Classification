@@ -4,6 +4,7 @@ import numpy as np
 import joblib
 import os
 import matplotlib.pyplot as plt
+import matplotlib.patheffects as pe
 import seaborn as sns
 from sklearn.metrics import (
     accuracy_score, roc_auc_score, precision_score, 
@@ -316,10 +317,10 @@ if df is not None:
 
             st.markdown("<br>", unsafe_allow_html=True) # Spacer
 
-            # Chart styling: self-contained backgrounds so text is always readable
-            # regardless of Streamlit light/dark theme
-            _chart_bg = '#F8F9FA'   # light neutral background
-            _text_color = '#2C3E50' # dark text — always readable on _chart_bg
+            # Chart styling: transparent background with outlined text
+            # for maximum contrast in both light and dark modes
+            _text_color = '#FFFFFF'
+            _stroke = [pe.withStroke(linewidth=3, foreground='#000000')]
 
             # Charts
             col_graph1, col_graph2 = st.columns(2)
@@ -334,8 +335,8 @@ if df is not None:
                     [f"FN\n{cm[1,0]}\n({cm[1,0]/total:.1%})", f"TP\n{cm[1,1]}\n({cm[1,1]/total:.1%})"]
                 ])
                 fig, ax = plt.subplots(figsize=(6, 5))
-                fig.patch.set_facecolor(_chart_bg)
-                ax.set_facecolor(_chart_bg)
+                fig.patch.set_alpha(0)
+                ax.set_facecolor('none')
                 sns.heatmap(
                     cm, annot=cm_labels, fmt='', cmap='RdYlGn', cbar=False, ax=ax,
                     annot_kws={"size": 13, "fontweight": "bold"},
@@ -343,9 +344,11 @@ if df is not None:
                     xticklabels=['No CHD (0)', 'CHD (1)'],
                     yticklabels=['No CHD (0)', 'CHD (1)']
                 )
-                ax.set_ylabel('Actual', fontsize=12, fontweight='bold', color=_text_color)
-                ax.set_xlabel('Predicted', fontsize=12, fontweight='bold', color=_text_color)
+                ax.set_ylabel('Actual', fontsize=12, fontweight='bold', color=_text_color, path_effects=_stroke)
+                ax.set_xlabel('Predicted', fontsize=12, fontweight='bold', color=_text_color, path_effects=_stroke)
                 ax.tick_params(colors=_text_color, labelsize=11)
+                for label in ax.get_xticklabels() + ax.get_yticklabels():
+                    label.set_path_effects(_stroke)
                 plt.tight_layout()
                 st.pyplot(fig)
             
@@ -360,8 +363,8 @@ if df is not None:
                 metrics_df_plot = pd.DataFrame(metrics_data)
                 
                 fig2, ax2 = plt.subplots(figsize=(6, 5))
-                fig2.patch.set_facecolor(_chart_bg)
-                ax2.set_facecolor(_chart_bg)
+                fig2.patch.set_alpha(0)
+                ax2.set_facecolor('none')
                 
                 # Create Horizontal Bar Plot for better label readability
                 bar_plot = sns.barplot(
@@ -387,14 +390,17 @@ if df is not None:
                             va="center", 
                             fontsize=10,
                             fontweight='bold',
-                            color=_text_color
+                            color=_text_color,
+                            path_effects=_stroke
                         )
                 
                 # Styling the plot
                 ax2.set_xlim(0, 1.2) # Add headroom for labels
-                ax2.set_xlabel("Score", fontsize=11, fontweight='bold', color=_text_color)
-                ax2.set_ylabel("Metric", fontsize=11, fontweight='bold', color=_text_color)
+                ax2.set_xlabel("Score", fontsize=11, fontweight='bold', color=_text_color, path_effects=_stroke)
+                ax2.set_ylabel("Metric", fontsize=11, fontweight='bold', color=_text_color, path_effects=_stroke)
                 ax2.tick_params(colors=_text_color)
+                for label in ax2.get_xticklabels() + ax2.get_yticklabels():
+                    label.set_path_effects(_stroke)
                 ax2.grid(axis='x', linestyle='--', alpha=0.3)
                 
                 # Remove top and right spines
