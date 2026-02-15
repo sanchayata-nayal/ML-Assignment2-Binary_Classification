@@ -72,14 +72,16 @@ def get_sample_data():
     return None
 
 # --- App Header ---
-# Adjusted column ratio to reduce gap [0.1, 0.9] instead of [1, 5]
-col1, col2 = st.columns([0.1, 0.9])
-with col1:
-    # Use a transparent background icon or standard emoji to look good in dark mode
-    st.markdown("<h1 style='text-align: center; margin-bottom: 0;'>❤️</h1>", unsafe_allow_html=True)
-with col2:
-    st.title("Coronary Heart Disease Prediction")
-    st.markdown("##### 🏥 Framingham Heart Study Analysis Tool")
+# Using Custom HTML/Flexbox to control the gap precisely
+st.markdown("""
+<div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+    <div style="font-size: 3rem;">❤️</div>
+    <div>
+        <h1 style="margin: 0; padding: 0;">Coronary Heart Disease Prediction</h1>
+        <h5 style="margin: 0; padding: 0; opacity: 0.8;">🏥 Framingham Heart Study Analysis Tool</h5>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 st.markdown("---")
 
@@ -262,14 +264,30 @@ if df is not None:
                 st.pyplot(fig)
             
             with col_graph2:
-                if y_prob is not None:
-                    st.markdown("**Risk Probability Distribution**")
-                    fig2, ax2 = plt.subplots(figsize=(5, 4))
-                    fig2.patch.set_alpha(0)
-                    sns.histplot(y_prob, bins=20, kde=True, color="#e74c3c", ax=ax2)
-                    plt.axvline(custom_threshold, color='black', linestyle='--', label=f'Cutoff {custom_threshold}')
-                    plt.legend()
-                    st.pyplot(fig2)
+                # REPLACED PROBABILITY DISTRIBUTION WITH BAR CHART OF METRICS
+                st.markdown("**Model Performance Summary**")
+                
+                # Prepare data for plotting
+                metrics_data = {
+                    "Metric": ["Accuracy", "AUC", "Precision", "Recall", "F1", "MCC"],
+                    "Value": [acc, auc, prec, rec, f1, mcc]
+                }
+                metrics_df_plot = pd.DataFrame(metrics_data)
+                
+                fig2, ax2 = plt.subplots(figsize=(5, 4))
+                fig2.patch.set_alpha(0)
+                
+                # Create Bar Plot
+                sns.barplot(data=metrics_df_plot, x="Value", y="Metric", palette="viridis", ax=ax2)
+                
+                # Add value labels to bars
+                for i, v in enumerate(metrics_df_plot["Value"]):
+                    ax2.text(v + 0.02, i, f"{v:.2f}", va='center', fontsize=9)
+                
+                plt.xlim(0, 1.1) # Fix x-axis from 0 to 1
+                plt.xlabel("Score")
+                plt.ylabel("")
+                st.pyplot(fig2)
 
         # --- Results Table ---
         st.markdown("### 📋 Detailed Predictions")
