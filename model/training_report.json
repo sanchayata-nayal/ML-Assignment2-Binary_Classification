@@ -1,0 +1,135 @@
+{
+  "training_timestamp": "2026-02-15T17:43:11.138836",
+  "pipeline": "production_orchestrator",
+  "notes": [
+    "Each model uses its own production-grade training script",
+    "BalancedBagging / SMOTE / ensemble strategies per model",
+    "Validation-based F1 threshold optimization (no test leakage)",
+    "Grid search over model-specific hyperparameters"
+  ],
+  "models": {
+    "logistic_regression": {
+      "name": "Logistic Regression",
+      "threshold": 0.37,
+      "accuracy": 0.5153301886792453,
+      "precision": 0.22023809523809523,
+      "recall": 0.8604651162790697,
+      "f1": 0.35071090047393366,
+      "roc_auc": 0.7008226326400793,
+      "strategy": "BalancedBagging(C=0.1,l1,n=50)"
+    },
+    "decision_tree": {
+      "name": "Decision Tree",
+      "threshold": 0.5649999999999998,
+      "accuracy": 0.7158018867924528,
+      "precision": 0.25862068965517243,
+      "recall": 0.46511627906976744,
+      "f1": 0.33240997229916897,
+      "roc_auc": 0.6725641772056365,
+      "strategy": "BalancedBagging(BB(d=6,l=10,f=0.7,n=100))"
+    },
+    "knn": {
+      "name": "k-Nearest Neighbors",
+      "threshold": 0.48499999999999976,
+      "accuracy": 0.6627358490566038,
+      "precision": 0.25236593059936907,
+      "recall": 0.6201550387596899,
+      "f1": 0.35874439461883406,
+      "roc_auc": 0.678499423186812,
+      "strategy": "BalancedBagging(BB-KNN(k=11,w=uniform,p=2,n=30))"
+    },
+    "naive_bayes": {
+      "name": "Naive Bayes",
+      "threshold": 0.4650000000000003,
+      "accuracy": 0.7523584905660378,
+      "precision": 0.2737430167597765,
+      "recall": 0.3798449612403101,
+      "f1": 0.3181818181818182,
+      "roc_auc": 0.6809899623723732,
+      "strategy": "BalancedBagging(vs=1e-11,n=80)"
+    },
+    "random_forest": {
+      "name": "Random Forest",
+      "threshold": 0.5250000000000001,
+      "accuracy": 0.7240566037735849,
+      "precision": 0.26244343891402716,
+      "recall": 0.4496124031007752,
+      "f1": 0.3314285714285714,
+      "roc_auc": 0.6676747420512987,
+      "strategy": "BalancedBagging-RF(d=20,leaf=3,n=200)"
+    },
+    "xgboost": {
+      "name": "XGBoost",
+      "threshold": 0.5500000000000003,
+      "accuracy": 0.7087264150943396,
+      "precision": 0.25416666666666665,
+      "recall": 0.4728682170542636,
+      "f1": 0.33062330623306235,
+      "roc_auc": 0.6783862168601956,
+      "strategy": "BB-XGB(bags=50,n=30,d=5,lr=0.05,mcw=3)"
+    }
+  },
+  "errors": {},
+  "comparison": [
+    {
+      "Model": "Logistic Regression",
+      "Strategy": "BalancedBagging(C=0.1,l1,n=50)",
+      "Threshold": 0.37,
+      "Accuracy": 0.5153301886792453,
+      "Precision": 0.22023809523809523,
+      "Recall": 0.8604651162790697,
+      "F1-Score": 0.35071090047393366,
+      "ROC-AUC": 0.7008226326400793
+    },
+    {
+      "Model": "Decision Tree",
+      "Strategy": "BalancedBagging(BB(d=6,l=10,f=0.7,n=100))",
+      "Threshold": 0.5649999999999998,
+      "Accuracy": 0.7158018867924528,
+      "Precision": 0.25862068965517243,
+      "Recall": 0.46511627906976744,
+      "F1-Score": 0.33240997229916897,
+      "ROC-AUC": 0.6725641772056365
+    },
+    {
+      "Model": "k-Nearest Neighbors",
+      "Strategy": "BalancedBagging(BB-KNN(k=11,w=uniform,p=2,n=30))",
+      "Threshold": 0.48499999999999976,
+      "Accuracy": 0.6627358490566038,
+      "Precision": 0.25236593059936907,
+      "Recall": 0.6201550387596899,
+      "F1-Score": 0.35874439461883406,
+      "ROC-AUC": 0.678499423186812
+    },
+    {
+      "Model": "Naive Bayes",
+      "Strategy": "BalancedBagging(vs=1e-11,n=80)",
+      "Threshold": 0.4650000000000003,
+      "Accuracy": 0.7523584905660378,
+      "Precision": 0.2737430167597765,
+      "Recall": 0.3798449612403101,
+      "F1-Score": 0.3181818181818182,
+      "ROC-AUC": 0.6809899623723732
+    },
+    {
+      "Model": "Random Forest",
+      "Strategy": "BalancedBagging-RF(d=20,leaf=3,n=200)",
+      "Threshold": 0.5250000000000001,
+      "Accuracy": 0.7240566037735849,
+      "Precision": 0.26244343891402716,
+      "Recall": 0.4496124031007752,
+      "F1-Score": 0.3314285714285714,
+      "ROC-AUC": 0.6676747420512987
+    },
+    {
+      "Model": "XGBoost",
+      "Strategy": "BB-XGB(bags=50,n=30,d=5,lr=0.05,mcw=3)",
+      "Threshold": 0.5500000000000003,
+      "Accuracy": 0.7087264150943396,
+      "Precision": 0.25416666666666665,
+      "Recall": 0.4728682170542636,
+      "F1-Score": 0.33062330623306235,
+      "ROC-AUC": 0.6783862168601956
+    }
+  ]
+}
