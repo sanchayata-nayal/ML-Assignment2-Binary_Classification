@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import joblib
 import os
 import matplotlib.pyplot as plt
@@ -8,6 +9,7 @@ from sklearn.metrics import (
     accuracy_score, roc_auc_score, precision_score, 
     recall_score, f1_score, matthews_corrcoef, confusion_matrix
 )
+from data_prep import engineer_features
 
 # --- Page Config ---
 st.set_page_config(
@@ -176,6 +178,7 @@ model = loaded_data['model']
 scaler = loaded_data['scaler']
 feature_names = loaded_data['feature_names']
 custom_threshold = loaded_data.get('threshold', 0.5)
+imputation_values = loaded_data.get('imputation_values', {})
 
 # --- Main Content Area ---
 
@@ -232,22 +235,32 @@ if df is not None:
         X_input = df
         y_true = None
 
-    # Handle Missing
+    # Handle Missing Values (impute using training medians, matching training pipeline)
     if X_input.isnull().values.any():
-        st.warning("⚠️ Data contains missing values. Dropping incomplete records.")
-        if has_target:
-            temp = pd.concat([X_input, y_true], axis=1).dropna()
-            X_input = temp.drop(columns=[target_col])
-            y_true = temp[target_col]
+        missing_count = X_input.isnull().sum().sum()
+        if imputation_values:
+            for col in X_input.columns:
+                if col in imputation_values and X_input[col].isnull().any():
+                    X_input[col] = X_input[col].fillna(imputation_values[col])
+            st.info(f"ℹ️ Imputed {missing_count} missing values using training medians (all {len(X_input)} records preserved).")
         else:
-            X_input = X_input.dropna()
+            st.warning("⚠️ Data contains missing values. Dropping incomplete records (no imputation values available).")
+            if has_target:
+                temp = pd.concat([X_input, y_true], axis=1).dropna()
+                X_input = temp.drop(columns=[target_col])
+                y_true = temp[target_col]
+            else:
+                X_input = X_input.dropna()
+
+    # Feature Engineering (same transformations as training)
+    X_input = engineer_features(X_input)
 
     # Align Columns & Scale
     try:
         X_input = X_input[feature_names]
         X_scaled = scaler.transform(X_input)
     except KeyError as e:
-        st.error(f"❌ Input data error: {e}")
+        st.error(f"❌ Input data error: {e}. Ensure input CSV has the same columns as the training data.")
         st.stop()
 
     # Run Button
@@ -331,7 +344,8 @@ if df is not None:
                 fig2, ax2 = plt.subplots(figsize=(6, 5))
                 # Transparent background to blend with theme
                 fig2.patch.set_alpha(0)
-                ax2.set_facecolor('none')
+                fig2.patch.set_facecolor('white')
+                ax2.set_facecolor('white')
                 
                 # Create Horizontal Bar Plot for better label readability
                 bar_plot = sns.barplot(
