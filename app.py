@@ -320,7 +320,6 @@ if df is not None:
             
             with col_graph2:
                 # Production Grade Bar Chart
-                st.markdown('<div class="plot-title">Model Performance Summary</div>', unsafe_allow_html=True)
                 
                 # Prepare data for plotting
                 metrics_data = {
@@ -330,39 +329,44 @@ if df is not None:
                 metrics_df_plot = pd.DataFrame(metrics_data)
                 
                 fig2, ax2 = plt.subplots(figsize=(6, 5))
+                # Transparent background to blend with theme
                 fig2.patch.set_alpha(0)
+                ax2.set_facecolor('rgba(0,0,0,0)')
                 
-                # Create Bar Plot
+                # Create Horizontal Bar Plot for better label readability
                 bar_plot = sns.barplot(
                     data=metrics_df_plot, 
-                    x="Metric", 
-                    y="Value", 
+                    y="Metric", 
+                    x="Value", 
                     hue="Metric", 
                     palette="viridis", 
                     ax=ax2,
-                    legend=False
+                    legend=False,
+                    orient='h'
                 )
                 
-                # Add value labels on top of bars
+                # Add value labels
                 for p in bar_plot.patches:
-                    height = p.get_height()
-                    if height > 0: # Only label non-zero/valid bars
+                    width = p.get_width()
+                    if width > 0: 
                          ax2.text(
-                            p.get_x() + p.get_width()/2., 
-                            height + 0.01, 
-                            f'{height:.2f}', 
-                            ha="center", 
+                            width + 0.02, 
+                            p.get_y() + p.get_height()/2, 
+                            f'{width:.2f}', 
+                            ha="left", 
+                            va="center", 
                             fontsize=10,
                             fontweight='bold'
                         )
                 
                 # Styling the plot
-                ax2.set_ylim(0, 1.15) # Add headroom for labels
-                ax2.set_ylabel("Score (0-1)", fontsize=10)
-                ax2.set_xlabel("Evaluation Metric", fontsize=10)
-                ax2.grid(axis='y', linestyle='--', alpha=0.3)
+                ax2.set_title("Model Performance Summary", fontsize=14, fontweight='bold', pad=15)
+                ax2.set_xlim(0, 1.2) # Add headroom for labels
+                ax2.set_xlabel("Score", fontsize=11, fontweight='bold')
+                ax2.set_ylabel("Metric", fontsize=11, fontweight='bold')
+                ax2.grid(axis='x', linestyle='--', alpha=0.3)
                 
-                # Remove top and right spines for aesthetics
+                # Remove top and right spines
                 sns.despine(ax=ax2, left=True, bottom=False)
                 
                 plt.tight_layout()
