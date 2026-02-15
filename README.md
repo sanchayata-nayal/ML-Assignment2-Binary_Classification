@@ -1,5 +1,25 @@
 # Comparative Analysis of Classification Algorithms for Coronary Heart Disease Prediction
 
+**Assignment:** ML-Assignment2 | M.Tech AI & ML (WILP), Semester 1
+
+**By:** Sanchayata Nayal (2025AA05965)
+
+---
+
+## Table of Contents
+
+1. [Problem Statement](#1-executive-summary)
+2. [Dataset Methodology](#2-dataset-methodology)
+3. [Models Used](#3-models-used)
+4. [Model Comparison: Evaluation Metrics](#4-model-comparison-evaluation-metrics)
+5. [Analysis and Observations](#5-analysis-and-observations)
+6. [Conclusions](#6-conclusions)
+7. [Overall Conclusion](#7-overall-conclusion)
+8. [Project Architecture](#8-project-architecture)
+9. [Technical Implementation](#9-technical-implementation)
+
+---
+
 ## 1. Executive Summary
 
 The primary objective of this research is to develop and evaluate a production-grade machine learning framework capable of predicting the ten-year risk of Coronary Heart Disease (CHD). Utilizing data from the Framingham Heart Study, this project implements a binary classification pipeline with advanced imbalanced-learning techniques. Six distinct algorithms were trained using ensemble strategies (BalancedBagging, EasyEnsemble, RUSBoost) with validation-based threshold optimization to maximize F1-Score on the heavily imbalanced dataset (~15% positive class). The final deliverable includes a deployed Streamlit web application for real-time inference.
@@ -35,7 +55,18 @@ The dataset comprises 15 original independent variables representing patient hea
 
 * **Class Imbalance Handling:** Each model uses its own strategy -- BalancedBagging (undersampling per bootstrap), SMOTE/SMOTEENN/SMOTETomek (oversampling), EasyEnsemble, or RUSBoost -- applied **only to the training portion** to prevent validation leakage.
 
-## 3. Experimental Results
+## 3. Models Used
+
+The following six classification algorithms were implemented and evaluated for predicting the ten-year risk of Coronary Heart Disease:
+
+1. **Logistic Regression**
+2. **Decision Tree Classifier**
+3. **K-Nearest Neighbor Classifier**
+4. **Naive Bayes Classifier** — Gaussian / Multinomial
+5. **Ensemble Model — Random Forest**
+6. **Ensemble Model — XGBoost**
+
+## 4. Model Comparison: Evaluation Metrics
 
 The following table presents the performance metrics derived from the **held-out test set** (848 samples: 719 negative, 129 positive). All models use **optimized decision thresholds** tuned on the validation set to maximize F1-Score.
 
@@ -55,7 +86,7 @@ The following table presents the performance metrics derived from the **held-out
 * **Best Recall:** Logistic Regression (0.8605)
 * **Best ROC-AUC:** Logistic Regression (0.7008)
 
-## 4. Analysis and Observations
+## 5. Analysis and Observations
 
 | ML Model Name | Observation about model performance |
 | :--- | :--- |
@@ -66,7 +97,7 @@ The following table presents the performance metrics derived from the **held-out
 | **Random Forest** | Achieved F1=0.3314 with a BalancedBagging ensemble wrapping individual Decision Trees with `max_features='sqrt'` (simulating Random Forest behavior). A grid of 48 configurations over depth, leaf size, and estimator count was searched. The winner (depth=20, min_leaf=3, n=200) provides deep, expressive trees while the BalancedBagging framework handles imbalance. Performance is close to XGBoost, suggesting the dataset's signal is well-captured by tree-based methods at this complexity level. |
 | **XGBoost** | Achieved F1=0.3306 using a dual-strategy search: Strategy A (XGBoost + scale_pos_weight + early stopping, 54 configs) and Strategy B (BalancedBagging wrapping XGBoost, 32 configs). Strategy B won, indicating that balanced subsampling via bagging outperforms internal class weighting for this dataset. The threshold was capped at 0.55 to prevent overshoot after retraining on full data. Despite being the most complex model, it did not significantly outperform simpler tree-based approaches, suggesting the Framingham dataset's predictive signal is relatively linear. |
 
-## 5. Conclusions
+## 6. Conclusions
 
 1. **Class imbalance is the dominant challenge.** With only ~15% positive cases, all models face a fundamental precision-recall trade-off. BalancedBagging (bootstrap undersampling) proved to be the most effective strategy across all model families, consistently outperforming SMOTE, EasyEnsemble, and RUSBoost alternatives.
 
@@ -82,78 +113,7 @@ The following table presents the performance metrics derived from the **held-out
    - **Confirmatory diagnosis (maximize precision):** Naive Bayes (27.4% precision)
    - **Overall discrimination (maximize AUC):** Logistic Regression (AUC=0.7008)
 
-## 6. Project Architecture
-
-The repository is organized to facilitate reproducibility and deployment:
-
-| Path | Description |
-| :--- | :--- |
-| `app.py` | Streamlit web application for inference and visualization |
-| `data_prep.py` | Data loading, median imputation, feature engineering, scaling |
-| `train_all_models.py` | Orchestrator -- trains all 6 models via subprocess |
-| `requirements.txt` | Python dependency configuration |
-| `2025AA05965_assignment.ipynb` | Jupyter notebook for assignment submission |
-| `README.md` | Project documentation |
-| **data/** | |
-| `data/framingham_heart_study.csv` | Original Framingham dataset (4,240 samples) |
-| `data/train_framingham.csv` | Training split (3,392 samples) |
-| `data/test_framingham.csv` | Test split (848 samples) |
-| **model/** | |
-| `model/logistic_regression.py` | LR training pipeline (BalancedBagging) |
-| `model/decision_tree.py` | DT training pipeline (3 strategies: BB, EE, RUSBoost) |
-| `model/knn.py` | KNN training pipeline (7 strategies) |
-| `model/naive_bayes.py` | NB training pipeline (BalancedBagging) |
-| `model/random_forest.py` | RF training pipeline (BalancedBagging) |
-| `model/xgboost_model.py` | XGBoost training pipeline (2 strategies) |
-| `model/training_report.json` | Unified metrics report (auto-generated) |
-| `model/*.pkl` | Persisted model artifacts (auto-generated) |
-
-## 7. Technical Implementation
-
-### 7.1 Prerequisites
-
-* Python 3.8 or higher
-* PIP Package Manager
-
-### 7.2 Installation Instructions
-
-1. **Clone the Repository:**
-```bash
-git clone <repository_url>
-cd ML-Assignment2-Binary_Classification
-```
-
-2. **Environment Configuration:**
-It is recommended to utilize a virtual environment to manage dependencies.
-```bash
-pip install -r requirements.txt
-```
-
-### 7.3 Training All Models
-To train all 6 models sequentially with the production orchestrator:
-```bash
-python train_all_models.py
-```
-Each model script runs independently, performing its own grid search, threshold optimization, and test evaluation. Results are saved to `model/training_report.json`.
-
-### 7.4 Training Individual Models
-Each model can also be trained independently:
-```bash
-python model/logistic_regression.py
-python model/decision_tree.py
-python model/knn.py
-python model/naive_bayes.py
-python model/random_forest.py
-python model/xgboost_model.py
-```
-
-### 7.5 Application Deployment
-The interactive dashboard is built using Streamlit. To launch the application locally:
-```bash
-streamlit run app.py
-```
-
-## 8. Overall Conclusion
+## 7. Overall Conclusion
 
 This project demonstrates a comprehensive, end-to-end machine learning pipeline for predicting the ten-year risk of Coronary Heart Disease using the Framingham Heart Study dataset. Across all six classification algorithms -- Logistic Regression, Decision Tree, k-Nearest Neighbors, Naive Bayes, Random Forest, and XGBoost -- the primary bottleneck was the severe class imbalance (~85:15 negative-to-positive ratio), which renders naive accuracy misleading and demands specialized techniques.
 
@@ -170,3 +130,79 @@ This project demonstrates a comprehensive, end-to-end machine learning pipeline 
 - **The best model depends on the clinical objective.** For mass screening where missing a positive case is unacceptable, Logistic Regression (86.1% recall) is the clear choice. For balanced precision-recall performance, KNN (F1=0.3587) leads. For minimizing false alarms in a confirmatory setting, Naive Bayes (27.4% precision, 75.2% accuracy) is preferred. No single model dominates all evaluation criteria, reinforcing the importance of aligning model selection with the specific healthcare deployment context.
 
 In summary, this project validates that thoughtful data preprocessing, domain-driven feature engineering, systematic imbalance handling, and principled threshold calibration collectively matter more than algorithm complexity for real-world medical risk prediction.
+
+## 8. Project Architecture
+
+The repository is organized to facilitate reproducibility and deployment:
+
+```
+ML-Assignment2-Binary_Classification/
+├── app.py                              # Streamlit web app for inference & visualization
+├── data_prep.py                        # Data loading, imputation, feature engineering, scaling
+├── train_all_models.py                 # Orchestrator — trains all 6 models via subprocess
+├── requirements.txt                    # Python dependency configuration
+├── 2025AA05965_assignment.ipynb        # Jupyter notebook for assignment submission
+├── README.md                           # Project documentation
+│
+├── data/
+│   ├── framingham_heart_study.csv      # Original Framingham dataset (4,240 samples)
+│   ├── train_framingham.csv            # Training split (3,392 samples)
+│   └── test_framingham.csv             # Test split (848 samples)
+│
+└── model/
+    ├── logistic_regression.py          # LR training pipeline (BalancedBagging)
+    ├── decision_tree.py                # DT training pipeline (BB, EE, RUSBoost)
+    ├── knn.py                          # KNN training pipeline (7 strategies)
+    ├── naive_bayes.py                  # NB training pipeline (BalancedBagging)
+    ├── random_forest.py                # RF training pipeline (BalancedBagging)
+    ├── xgboost_model.py                # XGBoost training pipeline (2 strategies)
+    ├── training_report.json            # Unified metrics report (auto-generated)
+    └── *.pkl                           # Persisted model artifacts (auto-generated)
+```
+
+## 9. Technical Implementation
+
+### 9.1 Prerequisites
+
+* Python 3.8 or higher
+* PIP Package Manager
+
+### 9.2 Installation Instructions
+
+1. **Clone the Repository:**
+```bash
+git clone <repository_url>
+cd ML-Assignment2-Binary_Classification
+```
+
+2. **Environment Configuration:**
+It is recommended to utilize a virtual environment to manage dependencies.
+```bash
+pip install -r requirements.txt
+```
+
+### 9.3 Training All Models
+To train all 6 models sequentially with the production orchestrator:
+```bash
+python train_all_models.py
+```
+Each model script runs independently, performing its own grid search, threshold optimization, and test evaluation. Results are saved to `model/training_report.json`.
+
+### 9.4 Training Individual Models
+Each model can also be trained independently:
+```bash
+python model/logistic_regression.py
+python model/decision_tree.py
+python model/knn.py
+python model/naive_bayes.py
+python model/random_forest.py
+python model/xgboost_model.py
+```
+
+### 9.5 Application Deployment
+The interactive dashboard is built using Streamlit. To launch the application locally:
+```bash
+streamlit run app.py
+```
+
+
