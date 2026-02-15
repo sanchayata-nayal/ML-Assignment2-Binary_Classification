@@ -350,7 +350,7 @@ if df is not None:
                 st.pyplot(fig)
             
             with col_graph2:
-                # Production Grade Bar Chart
+                st.markdown('<div class="plot-title">Model Performance Summary</div>', unsafe_allow_html=True)
                 
                 # Prepare data for plotting
                 metrics_data = {
@@ -391,7 +391,6 @@ if df is not None:
                         )
                 
                 # Styling the plot
-                ax2.set_title("Model Performance Summary", fontsize=14, fontweight='bold', pad=15, color=_text_color)
                 ax2.set_xlim(0, 1.2) # Add headroom for labels
                 ax2.set_xlabel("Score", fontsize=11, fontweight='bold', color=_text_color)
                 ax2.set_ylabel("Metric", fontsize=11, fontweight='bold', color=_text_color)
