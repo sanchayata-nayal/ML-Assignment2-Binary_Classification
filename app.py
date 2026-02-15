@@ -320,7 +320,7 @@ if df is not None:
             # Chart styling: transparent background with outlined text
             # for maximum contrast in both light and dark modes
             _text_color = '#FFFFFF'
-            _stroke = [pe.withStroke(linewidth=3, foreground='#000000')]
+            _stroke = [pe.withStroke(linewidth=1, foreground='#000000')]
 
             # Charts
             col_graph1, col_graph2 = st.columns(2)
