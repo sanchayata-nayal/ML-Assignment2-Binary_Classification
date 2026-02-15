@@ -25,13 +25,38 @@ st.markdown("""
         font-family: 'Helvetica Neue', sans-serif;
     }
     
-    /* Metrics Styling - Uses Theme Colors */
-    div[data-testid="stMetricValue"] {
-        font-size: 24px;
-        color: var(--primary-color);
-        word-wrap: break-word;
+    /* Metrics Card Styling */
+    .metric-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 15px;
+        background-color: rgba(255, 255, 255, 0.1); /* Semi-transparent white */
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        margin: 5px;
+        height: 100%;
+        text-align: center;
     }
-    
+
+    /* Metric Label */
+    .metric-label {
+        font-size: 0.9rem;
+        font-weight: 600;
+        opacity: 0.8;
+        margin-bottom: 5px;
+        color: var(--text-color);
+    }
+
+    /* Metric Value */
+    .metric-value {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: var(--primary-color);
+    }
+
     /* Button Styling */
     .stButton>button {
         border-radius: 8px;
@@ -44,6 +69,14 @@ st.markdown("""
     /* Success Message - Uses Theme Colors */
     .stSuccess {
         border-radius: 10px;
+    }
+    
+    /* Center Plot Titles */
+    .plot-title {
+        text-align: center;
+        font-weight: bold;
+        margin-bottom: 10px;
+        font-size: 1.1rem;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -70,6 +103,15 @@ def get_sample_data():
             return pd.read_csv(path)
             
     return None
+
+def metric_card(label, value, color_hex="#4e73df"):
+    """Displays a custom styled metric card."""
+    st.markdown(f"""
+    <div class="metric-container">
+        <div class="metric-label">{label}</div>
+        <div class="metric-value" style="color: {color_hex};">{value}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
 # --- App Header ---
 # Using Custom HTML/Flexbox to control the gap precisely
@@ -239,33 +281,46 @@ if df is not None:
             mcc = matthews_corrcoef(y_true, y_pred)
             auc = roc_auc_score(y_true, y_prob) if y_prob is not None else 0.0
 
-            # Display in 6 columns as requested
+            # Display in Cards
+            # Define colors for different metrics
+            colors = {
+                "Accuracy": "#4e73df",
+                "AUC": "#f6c23e",
+                "Precision": "#1cc88a",
+                "Recall": "#e74c3c", 
+                "F1": "#36b9cc",
+                "MCC": "#858796"
+            }
+            
             m1, m2, m3, m4, m5, m6 = st.columns(6)
             
-            m1.metric("Accuracy", f"{acc:.1%}")
-            m2.metric("AUC Score", f"{auc:.3f}" if y_prob is not None else "N/A")
-            m3.metric("Precision", f"{prec:.1%}")
-            m4.metric("Recall", f"{rec:.1%}")
-            m5.metric("F1 Score", f"{f1:.3f}")
-            m6.metric("MCC Score", f"{mcc:.3f}")
+            with m1: metric_card("Accuracy", f"{acc:.1%}", colors["Accuracy"])
+            with m2: metric_card("AUC Score", f"{auc:.3f}" if y_prob is not None else "N/A", colors["AUC"])
+            with m3: metric_card("Precision", f"{prec:.1%}", colors["Precision"])
+            with m4: metric_card("Recall", f"{rec:.1%}", colors["Recall"])
+            with m5: metric_card("F1 Score", f"{f1:.3f}", colors["F1"])
+            with m6: metric_card("MCC Score", f"{mcc:.3f}", colors["MCC"])
+
+            st.markdown("<br>", unsafe_allow_html=True) # Spacer
 
             # Charts
             col_graph1, col_graph2 = st.columns(2)
             
             with col_graph1:
-                st.markdown("**Confusion Matrix**")
+                st.markdown('<div class="plot-title">Confusion Matrix</div>', unsafe_allow_html=True)
                 cm = confusion_matrix(y_true, y_pred)
-                fig, ax = plt.subplots(figsize=(5, 4))
+                fig, ax = plt.subplots(figsize=(6, 5))
                 # Transparent background for dark mode compatibility
                 fig.patch.set_alpha(0)
-                sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False, ax=ax)
-                plt.ylabel('Actual Condition')
-                plt.xlabel('Predicted Condition')
+                sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False, ax=ax, annot_kws={"size": 14})
+                plt.ylabel('Actual Condition (0=No, 1=Yes)', fontsize=10)
+                plt.xlabel('Predicted Condition (0=No, 1=Yes)', fontsize=10)
+                plt.tight_layout()
                 st.pyplot(fig)
             
             with col_graph2:
-                # REPLACED PROBABILITY DISTRIBUTION WITH BAR CHART OF METRICS
-                st.markdown("**Model Performance Summary**")
+                # Production Grade Bar Chart
+                st.markdown('<div class="plot-title">Model Performance Summary</div>', unsafe_allow_html=True)
                 
                 # Prepare data for plotting
                 metrics_data = {
@@ -274,19 +329,43 @@ if df is not None:
                 }
                 metrics_df_plot = pd.DataFrame(metrics_data)
                 
-                fig2, ax2 = plt.subplots(figsize=(5, 4))
+                fig2, ax2 = plt.subplots(figsize=(6, 5))
                 fig2.patch.set_alpha(0)
                 
                 # Create Bar Plot
-                sns.barplot(data=metrics_df_plot, x="Value", y="Metric", palette="viridis", ax=ax2)
+                bar_plot = sns.barplot(
+                    data=metrics_df_plot, 
+                    x="Metric", 
+                    y="Value", 
+                    hue="Metric", 
+                    palette="viridis", 
+                    ax=ax2,
+                    legend=False
+                )
                 
-                # Add value labels to bars
-                for i, v in enumerate(metrics_df_plot["Value"]):
-                    ax2.text(v + 0.02, i, f"{v:.2f}", va='center', fontsize=9)
+                # Add value labels on top of bars
+                for p in bar_plot.patches:
+                    height = p.get_height()
+                    if height > 0: # Only label non-zero/valid bars
+                         ax2.text(
+                            p.get_x() + p.get_width()/2., 
+                            height + 0.01, 
+                            f'{height:.2f}', 
+                            ha="center", 
+                            fontsize=10,
+                            fontweight='bold'
+                        )
                 
-                plt.xlim(0, 1.1) # Fix x-axis from 0 to 1
-                plt.xlabel("Score")
-                plt.ylabel("")
+                # Styling the plot
+                ax2.set_ylim(0, 1.15) # Add headroom for labels
+                ax2.set_ylabel("Score (0-1)", fontsize=10)
+                ax2.set_xlabel("Evaluation Metric", fontsize=10)
+                ax2.grid(axis='y', linestyle='--', alpha=0.3)
+                
+                # Remove top and right spines for aesthetics
+                sns.despine(ax=ax2, left=True, bottom=False)
+                
+                plt.tight_layout()
                 st.pyplot(fig2)
 
         # --- Results Table ---
