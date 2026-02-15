@@ -317,11 +317,17 @@ if df is not None:
             st.markdown("<br>", unsafe_allow_html=True) # Spacer
 
             # Theme-aware text color for matplotlib charts
-            _theme_base = st.get_option('theme.base')
-            if _theme_base == 'light':
-                _text_color = '#333333'
+            # Use explicit textColor if set, otherwise infer from theme.base
+            _theme_text = st.get_option('theme.textColor')
+            if _theme_text:
+                _text_color = _theme_text
             else:
-                _text_color = '#FAFAFA'
+                _theme_base = st.get_option('theme.base')
+                if _theme_base == 'dark':
+                    _text_color = '#FAFAFA'
+                else:
+                    # 'light' or None (default) → dark text
+                    _text_color = '#333333'
 
             # Charts
             col_graph1, col_graph2 = st.columns(2)
