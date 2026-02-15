@@ -280,7 +280,7 @@ if df is not None:
 
         # Display Alert for Custom Threshold
         if custom_threshold != 0.5:
-            st.info(f"ℹ️ **Note:** Model tuned with sensitivity threshold: **{custom_threshold}**")
+            st.info(f"ℹ️ **Note:** Model tuned with sensitivity threshold: **{custom_threshold:.4f}**")
 
         # --- Metrics Row ---
         if has_target:
@@ -329,13 +329,25 @@ if df is not None:
             with col_graph1:
                 st.markdown('<div class="plot-title">Confusion Matrix</div>', unsafe_allow_html=True)
                 cm = confusion_matrix(y_true, y_pred)
+                # Build annotation labels with counts and percentages
+                total = cm.sum()
+                cm_labels = np.array([
+                    [f"TN\n{cm[0,0]}\n({cm[0,0]/total:.1%})", f"FP\n{cm[0,1]}\n({cm[0,1]/total:.1%})"],
+                    [f"FN\n{cm[1,0]}\n({cm[1,0]/total:.1%})", f"TP\n{cm[1,1]}\n({cm[1,1]/total:.1%})"]
+                ])
                 fig, ax = plt.subplots(figsize=(6, 5))
                 fig.patch.set_alpha(0)
                 ax.set_facecolor('none')
-                sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False, ax=ax, annot_kws={"size": 14})
-                ax.set_ylabel('Actual Condition (0=No, 1=Yes)', fontsize=10, color=_text_color)
-                ax.set_xlabel('Predicted Condition (0=No, 1=Yes)', fontsize=10, color=_text_color)
-                ax.tick_params(colors=_text_color)
+                sns.heatmap(
+                    cm, annot=cm_labels, fmt='', cmap='RdYlGn', cbar=False, ax=ax,
+                    annot_kws={"size": 13, "fontweight": "bold"},
+                    linewidths=2, linecolor='white',
+                    xticklabels=['No CHD (0)', 'CHD (1)'],
+                    yticklabels=['No CHD (0)', 'CHD (1)']
+                )
+                ax.set_ylabel('Actual', fontsize=12, fontweight='bold', color=_text_color)
+                ax.set_xlabel('Predicted', fontsize=12, fontweight='bold', color=_text_color)
+                ax.tick_params(colors=_text_color, labelsize=11)
                 plt.tight_layout()
                 st.pyplot(fig)
             
