@@ -17,33 +17,18 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- Modern CSS Styling ---
+# --- Modern CSS Styling (Theme Aware) ---
 st.markdown("""
     <style>
-    /* Main Background */
-    .stApp {
-        background: linear-gradient(to bottom right, #f8f9fa, #ffffff);
-    }
-    
-    /* Card Styling */
-    .css-1r6slb0, .css-12oz5g7 {
-        background-color: white;
-        border-radius: 15px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        padding: 20px;
-        margin-bottom: 20px;
-    }
-    
     /* Headers */
     h1, h2, h3 {
-        color: #2c3e50;
         font-family: 'Helvetica Neue', sans-serif;
     }
     
-    /* Metrics Styling */
+    /* Metrics Styling - Uses Theme Colors */
     div[data-testid="stMetricValue"] {
         font-size: 28px;
-        color: #e74c3c;
+        color: var(--primary-color);
     }
     
     /* Button Styling */
@@ -55,10 +40,8 @@ st.markdown("""
         transition: all 0.3s ease;
     }
     
-    /* Success Message */
+    /* Success Message - Uses Theme Colors */
     .stSuccess {
-        background-color: #d4edda;
-        color: #155724;
         border-radius: 10px;
     }
     </style>
@@ -74,17 +57,24 @@ def load_model(filename):
 
 @st.cache_data
 def get_sample_data():
-    """Loads framingham.csv and returns a clean sample for testing."""
-    if os.path.exists("framingham.csv"):
-        df = pd.read_csv("framingham.csv")
-        # Deterministic sample for reproducibility
-        return df.sample(n=100, random_state=42)
+    """Loads test_framingham.csv from data folder."""
+    # Check paths (robustness for local vs deployed env)
+    possible_paths = [
+        os.path.join("data", "test_framingham.csv"),
+        "test_framingham.csv"
+    ]
+    
+    for path in possible_paths:
+        if os.path.exists(path):
+            return pd.read_csv(path)
+            
     return None
 
 # --- App Header ---
 col1, col2 = st.columns([1, 5])
 with col1:
-    st.image("https://img.icons8.com/color/96/heart-with-pulse.png", width=80)
+    # Use a transparent background icon or standard emoji to look good in dark mode
+    st.markdown("<h1>❤️</h1>", unsafe_allow_html=True)
 with col2:
     st.title("Coronary Heart Disease Prediction")
     st.markdown("##### 🏥 Advanced AI Diagnostic Tool")
@@ -153,10 +143,10 @@ data_source = st.radio("Choose Data Source:",
 df = None
 
 if "Sample" in data_source:
-    # Load default sample
+    # Load test data from data/ folder
     df = get_sample_data()
     if df is not None:
-        st.success("✅ Sample Test Data Loaded Successfully (100 Patients)")
+        st.success(f"✅ Loaded test data from `data/test_framingham.csv` ({len(df)} records)")
         
         # Allow user to download this sample
         csv = df.to_csv(index=False).encode('utf-8')
@@ -168,7 +158,7 @@ if "Sample" in data_source:
             help="Download this sample to use for manual testing"
         )
     else:
-        st.error("Could not find 'framingham.csv' to generate samples.")
+        st.error("Could not find 'data/test_framingham.csv'. Please check the repository structure.")
 
 else:
     # Upload handler
@@ -249,6 +239,8 @@ if df is not None:
                 st.markdown("**Confusion Matrix**")
                 cm = confusion_matrix(y_true, y_pred)
                 fig, ax = plt.subplots(figsize=(5, 4))
+                # Transparent background for dark mode compatibility
+                fig.patch.set_alpha(0)
                 sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False, ax=ax)
                 plt.ylabel('Actual Condition')
                 plt.xlabel('Predicted Condition')
@@ -258,6 +250,7 @@ if df is not None:
                 if y_prob is not None:
                     st.markdown("**Risk Probability Distribution**")
                     fig2, ax2 = plt.subplots(figsize=(5, 4))
+                    fig2.patch.set_alpha(0)
                     sns.histplot(y_prob, bins=20, kde=True, color="#e74c3c", ax=ax2)
                     plt.axvline(custom_threshold, color='black', linestyle='--', label=f'Cutoff {custom_threshold}')
                     plt.legend()
