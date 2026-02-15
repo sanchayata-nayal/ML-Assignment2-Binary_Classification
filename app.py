@@ -8,6 +8,7 @@ from sklearn.metrics import (
     accuracy_score, roc_auc_score, precision_score, 
     recall_score, f1_score, matthews_corrcoef, confusion_matrix
 )
+from data_prep import engineer_features
 
 # --- Page Config ---
 st.set_page_config(
@@ -89,6 +90,8 @@ if not loaded_data:
 model = loaded_data['model']
 scaler = loaded_data['scaler']
 feature_names = loaded_data['feature_names']
+imputation_values = loaded_data.get('imputation_values', {})
+saved_threshold = loaded_data.get('threshold', 0.5)  # Use calibrated threshold
 
 # --- Main App Logic using Tabs ---
 tab1, tab2 = st.tabs(["🎲 Generate Test Data", "🚀 Prediction Dashboard"])
@@ -97,45 +100,141 @@ tab1, tab2 = st.tabs(["🎲 Generate Test Data", "🚀 Prediction Dashboard"])
 # TAB 1: DATA GENERATOR
 # ==========================================
 with tab1:
-    st.header("🎲 Random Test Data Generator")
-    st.markdown("Don't have a file? Generate a random sample from the original dataset to test the models.")
+    st.header("🎲 Test Data Management")
+    st.markdown("Generate random test data or load from saved files to evaluate your models.")
     
-    # Check if source file exists
-    source_file = "framingham_heart_study.csv"
-    if os.path.exists(source_file):
-        df_full = pd.read_csv(source_file)
-        
-        col1, col2 = st.columns([1, 2])
-        
-        with col1:
-            st.subheader("Settings")
-            # Slider for percentage
-            sample_percent = st.slider("Select Data Percentage (%)", 1, 50, 10)
+    # Sub-tabs for different options
+    gen_tab1, gen_tab2 = st.tabs(["📊 Generate New Data", "📂 Load Saved Files"])
+    
+    # ==== GENERATE NEW DATA TAB ====
+    with gen_tab1:
+        source_file = "data/framingham_heart_study.csv"
+        if os.path.exists(source_file):
+            df_full = pd.read_csv(source_file)
             
-            # Randomize Button
-            if st.button("🎲 Randomize & Sample"):
-                # Sampling logic
-                df_sample = df_full.sample(frac=sample_percent/100, random_state=None) # None for true random
-                st.session_state['generated_data'] = df_sample
-                st.success(f"Generated {len(df_sample)} random patient records!")
-        
-        with col2:
-            st.subheader("Preview")
-            if 'generated_data' in st.session_state:
-                st.dataframe(st.session_state['generated_data'].head(8), use_container_width=True)
+            col1, col2 = st.columns([1, 2])
+            
+            with col1:
+                st.subheader("⚙️ Generation Settings")
                 
-                # Download Button
-                csv_data = st.session_state['generated_data'].to_csv(index=False).encode('utf-8')
-                st.download_button(
-                    label="📥 Download This Sample CSV",
-                    data=csv_data,
-                    file_name="random_test_data.csv",
-                    mime="text/csv",
+                # Option to sample or create synthetic
+                gen_method = st.radio("Generation Method:", 
+                    ["Sample from Original", "Custom Random Range"], 
+                    help="Sample: Random rows from original dataset\nCustom: Generate based on column statistics")
+                
+                if gen_method == "Sample from Original":
+                    sample_percent = st.slider("Select Data Percentage (%)", 1, 50, 10)
+                    sample_size = int(len(df_full) * sample_percent / 100)
+                else:
+                    sample_size = st.number_input("Number of Samples to Generate", 10, 500, 50)
+                
+                # Include target or not
+                include_target = st.checkbox("Include Target Column (TenYearCHD)", value=True,
+                    help="Check to test model performance, uncheck to test predictions only")
+                
+                # Randomize Button
+                if st.button("🎲 Generate Data", type="primary"):
+                    with st.spinner("Generating test data..."):
+                        if gen_method == "Sample from Original":
+                            df_sample = df_full.sample(n=min(sample_size, len(df_full)), random_state=None)
+                        else:
+                            # Generate synthetic data based on original statistics
+                            import numpy as np
+                            df_sample = pd.DataFrame()
+                            for col in df_full.columns:
+                                col_mean = df_full[col].mean()
+                                col_std = df_full[col].std()
+                                df_sample[col] = np.random.normal(col_mean, col_std, sample_size)
+                            # Round numeric columns appropriately
+                            for col in df_sample.columns:
+                                if 'Age' in col or col == 'TenYearCHD':
+                                    df_sample[col] = df_sample[col].astype(int)
+                                else:
+                                    df_sample[col] = df_sample[col].round(2)
+                        
+                        # Drop target if not needed
+                        if not include_target:
+                            df_sample = df_sample.drop(columns=['TenYearCHD'], errors='ignore')
+                        
+                        st.session_state['generated_data'] = df_sample
+                        st.success(f"✅ Generated {len(df_sample)} test records!")
+            
+            with col2:
+                st.subheader("👀 Data Preview")
+                if 'generated_data' in st.session_state:
+                    st.dataframe(st.session_state['generated_data'].head(10), use_container_width=True)
+                    
+                    # Download Button
+                    csv_data = st.session_state['generated_data'].to_csv(index=False).encode('utf-8')
+                    
+                    # Create filename with timestamp
+                    import datetime
+                    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                    filename = f"test_data_{timestamp}.csv"
+                    
+                    st.download_button(
+                        label="📥 Download Test Data CSV",
+                        data=csv_data,
+                        file_name=filename,
+                        mime="text/csv",
+                        use_container_width=True
+                    )
+                    
+                    # Info box
+                    st.info(f"📊 Shape: {st.session_state['generated_data'].shape[0]} rows × {st.session_state['generated_data'].shape[1]} columns")
+                else:
+                    st.info("👈 Click 'Generate Data' button to create test data.")
+        else:
+            st.warning("⚠️ Source 'framingham_heart_study.csv' not found. Cannot generate samples.")
+    
+    # ==== LOAD SAVED FILES TAB ====
+    with gen_tab2:
+        st.subheader("📂 Load Saved Test Files")
+        
+        # Option 1: Browse test_data folder
+        test_data_folder = "test_data"
+        
+        # Create folder if it doesn't exist
+        if not os.path.exists(test_data_folder):
+            os.makedirs(test_data_folder)
+        
+        # List CSV files in test_data folder
+        csv_files = [f for f in os.listdir(test_data_folder) if f.endswith('.csv')]
+        
+        if csv_files:
+            col1, col2 = st.columns([1, 2])
+            
+            with col1:
+                st.write("**Available Test Files:**")
+                selected_file = st.selectbox(
+                    "Select a test file",
+                    csv_files,
+                    label_visibility="collapsed"
                 )
-            else:
-                st.info("👈 Click the 'Randomize' button to generate data.")
-    else:
-        st.warning("⚠️ Source 'framingham_heart_study.csv' not found. Cannot generate random samples.")
+                
+                if st.button("📂 Load Selected File", type="primary"):
+                    file_path = os.path.join(test_data_folder, selected_file)
+                    try:
+                        df_loaded = pd.read_csv(file_path)
+                        st.session_state['generated_data'] = df_loaded
+                        st.success(f"✅ Loaded {selected_file}")
+                    except Exception as e:
+                        st.error(f"❌ Error loading file: {e}")
+            
+            with col2:
+                st.write("**File Details:**")
+                for filename in csv_files:
+                    filepath = os.path.join(test_data_folder, filename)
+                    file_size = os.path.getsize(filepath) / 1024  # KB
+                    file_rows = len(pd.read_csv(filepath))
+                    st.caption(f"📄 {filename} ({file_rows} rows, {file_size:.1f} KB)")
+        else:
+            st.info(f"📁 No test files found in '{test_data_folder}' folder.\n\n"
+                   f"**Getting Started:**\n"
+                   f"1. Generated test data using the 'Generate New Data' tab\n"
+                   f"2. Download the CSV file\n"
+                   f"3. Move it to the '{test_data_folder}' folder\n"
+                   f"4. Refresh this tab to see it here!")
 
 # ==========================================
 # TAB 2: PREDICTION DASHBOARD
@@ -172,15 +271,27 @@ with tab2:
                 X_input = df
                 y_true = None
 
-            # Handle Missing Values
+            # Handle Missing Values (impute using training medians)
             if X_input.isnull().values.any():
-                st.warning("⚠️ Data contains missing values. Dropping incomplete rows...")
-                if has_target:
-                    data_temp = pd.concat([X_input, y_true], axis=1).dropna()
-                    X_input = data_temp.drop(columns=[target_col])
-                    y_true = data_temp[target_col]
+                if imputation_values:
+                    st.info("Imputing missing values using training data medians...")
+                    X_input = X_input.fillna(imputation_values)
+                    if has_target and y_true is not None:
+                        # Keep alignment
+                        mask = ~df.drop(columns=[target_col]).isnull().all(axis=1)
+                        y_true = y_true[mask].reset_index(drop=True)
+                        X_input = X_input[mask].reset_index(drop=True)
                 else:
-                    X_input = X_input.dropna()
+                    st.warning("\u26a0\ufe0f Data contains missing values. Dropping incomplete rows...")
+                    if has_target:
+                        data_temp = pd.concat([X_input, y_true], axis=1).dropna()
+                        X_input = data_temp.drop(columns=[target_col])
+                        y_true = data_temp[target_col]
+                    else:
+                        X_input = X_input.dropna()
+
+            # Feature Engineering (same as training pipeline)
+            X_input = engineer_features(X_input)
 
             # Feature Scaling
             try:
@@ -194,12 +305,12 @@ with tab2:
             # Run Prediction Button
             if st.button("⚡ Run Model Prediction", type="primary"):
                 with st.spinner('Analyzing patient data...'):
-                    y_pred = model.predict(X_scaled)
-                    
-                    # Get probabilities if supported
+                    # Use saved threshold for probability-based prediction
                     if hasattr(model, "predict_proba"):
                         y_prob = model.predict_proba(X_scaled)[:, 1]
+                        y_pred = (y_prob >= saved_threshold).astype(int)
                     else:
+                        y_pred = model.predict(X_scaled)
                         y_prob = None
 
                 # --- Results Display ---
