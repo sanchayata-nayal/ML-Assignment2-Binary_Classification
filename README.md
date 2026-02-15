@@ -1,4 +1,4 @@
-# Comparative Analysis of Classification Algorithms for Coronary Heart Disease Prediction
+# Coronary Heart Disease Prediction | A Comparative Analysis of Classification Algorithms 
 
 **Assignment:** ML-Assignment2 | M.Tech AI & ML (WILP), Semester 1
 
