@@ -27,8 +27,9 @@ st.markdown("""
     
     /* Metrics Styling - Uses Theme Colors */
     div[data-testid="stMetricValue"] {
-        font-size: 28px;
+        font-size: 24px;
         color: var(--primary-color);
+        word-wrap: break-word;
     }
     
     /* Button Styling */
@@ -71,13 +72,14 @@ def get_sample_data():
     return None
 
 # --- App Header ---
-col1, col2 = st.columns([1, 5])
+# Adjusted column ratio to reduce gap [0.1, 0.9] instead of [1, 5]
+col1, col2 = st.columns([0.1, 0.9])
 with col1:
     # Use a transparent background icon or standard emoji to look good in dark mode
-    st.markdown("<h1>❤️</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; margin-bottom: 0;'>❤️</h1>", unsafe_allow_html=True)
 with col2:
     st.title("Coronary Heart Disease Prediction")
-    st.markdown("##### 🏥 Advanced AI Diagnostic Tool")
+    st.markdown("##### 🏥 Framingham Heart Study Analysis Tool")
 
 st.markdown("---")
 
@@ -226,11 +228,24 @@ if df is not None:
         # --- Metrics Row ---
         if has_target:
             st.markdown("### 📊 Performance Metrics")
-            m1, m2, m3, m4 = st.columns(4)
-            m1.metric("Accuracy", f"{accuracy_score(y_true, y_pred):.1%}", delta_color="normal")
-            m2.metric("Precision", f"{precision_score(y_true, y_pred):.1%}", delta_color="normal")
-            m3.metric("Recall (Sensitivity)", f"{recall_score(y_true, y_pred):.1%}", delta_color="inverse") # Inverted because high is good
-            m4.metric("F1 Score", f"{f1_score(y_true, y_pred):.1%}")
+            
+            # Calculate all required metrics
+            acc = accuracy_score(y_true, y_pred)
+            prec = precision_score(y_true, y_pred)
+            rec = recall_score(y_true, y_pred)
+            f1 = f1_score(y_true, y_pred)
+            mcc = matthews_corrcoef(y_true, y_pred)
+            auc = roc_auc_score(y_true, y_prob) if y_prob is not None else 0.0
+
+            # Display in 6 columns as requested
+            m1, m2, m3, m4, m5, m6 = st.columns(6)
+            
+            m1.metric("Accuracy", f"{acc:.1%}")
+            m2.metric("AUC Score", f"{auc:.3f}" if y_prob is not None else "N/A")
+            m3.metric("Precision", f"{prec:.1%}")
+            m4.metric("Recall", f"{rec:.1%}")
+            m5.metric("F1 Score", f"{f1:.3f}")
+            m6.metric("MCC Score", f"{mcc:.3f}")
 
             # Charts
             col_graph1, col_graph2 = st.columns(2)
