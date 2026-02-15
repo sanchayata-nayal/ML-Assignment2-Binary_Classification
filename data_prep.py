@@ -3,7 +3,6 @@ import numpy as np
 import os
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from imblearn.over_sampling import SMOTE
 
 
 # ============================================================
@@ -229,6 +228,7 @@ def prepare_training_data(filepath='data/train_framingham.csv',
 
     # 7. SMOTE Oversampling (on training portion only — production best practice)
     if apply_oversampling:
+        from imblearn.over_sampling import SMOTE
         pre_smote = len(X_train_scaled)
         smote = SMOTE(random_state=42, k_neighbors=5)
         X_train_scaled, y_train = smote.fit_resample(X_train_scaled, y_train)
