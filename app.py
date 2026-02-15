@@ -331,7 +331,7 @@ if df is not None:
                 fig2, ax2 = plt.subplots(figsize=(6, 5))
                 # Transparent background to blend with theme
                 fig2.patch.set_alpha(0)
-                ax2.set_facecolor('rgba(0,0,0,0)')
+                ax2.set_facecolor('none')
                 
                 # Create Horizontal Bar Plot for better label readability
                 bar_plot = sns.barplot(
