@@ -8,19 +8,19 @@
 
 ## Table of Contents
 
-1. [Problem Statement](#1-executive-summary)
+1. [Problem Statement](#1-problem-statement)
 2. [Dataset Methodology](#2-dataset-methodology)
 3. [Models Used](#3-models-used)
 4. [Model Comparison: Evaluation Metrics](#4-model-comparison-evaluation-metrics)
 5. [Analysis and Observations](#5-analysis-and-observations)
-6. [Conclusions](#6-conclusions)
+6. [Key Findings](#6-key-findings)
 7. [Overall Conclusion](#7-overall-conclusion)
 8. [Project Architecture](#8-project-architecture)
 9. [Technical Implementation](#9-technical-implementation)
 
 ---
 
-## 1. Executive Summary
+## 1. Problem Statement
 
 The primary objective of this research is to develop and evaluate a production-grade machine learning framework capable of predicting the ten-year risk of Coronary Heart Disease (CHD). Utilizing data from the Framingham Heart Study, this project implements a binary classification pipeline with advanced imbalanced-learning techniques. Six distinct algorithms were trained using ensemble strategies (BalancedBagging, EasyEnsemble, RUSBoost) with validation-based threshold optimization to maximize F1-Score on the heavily imbalanced dataset (~15% positive class). The final deliverable includes a deployed Streamlit web application for real-time inference.
 
@@ -97,7 +97,7 @@ The following table presents the performance metrics derived from the **held-out
 | **Random Forest** | Achieved F1=0.3314 with a BalancedBagging ensemble wrapping individual Decision Trees with `max_features='sqrt'` (simulating Random Forest behavior). A grid of 48 configurations over depth, leaf size, and estimator count was searched. The winner (depth=20, min_leaf=3, n=200) provides deep, expressive trees while the BalancedBagging framework handles imbalance. Performance is close to XGBoost, suggesting the dataset's signal is well-captured by tree-based methods at this complexity level. |
 | **XGBoost** | Achieved F1=0.3306 using a dual-strategy search: Strategy A (XGBoost + scale_pos_weight + early stopping, 54 configs) and Strategy B (BalancedBagging wrapping XGBoost, 32 configs). Strategy B won, indicating that balanced subsampling via bagging outperforms internal class weighting for this dataset. The threshold was capped at 0.55 to prevent overshoot after retraining on full data. Despite being the most complex model, it did not significantly outperform simpler tree-based approaches, suggesting the Framingham dataset's predictive signal is relatively linear. |
 
-## 6. Conclusions
+## 6. Key Findings
 
 1. **Class imbalance is the dominant challenge.** With only ~15% positive cases, all models face a fundamental precision-recall trade-off. BalancedBagging (bootstrap undersampling) proved to be the most effective strategy across all model families, consistently outperforming SMOTE, EasyEnsemble, and RUSBoost alternatives.
 
@@ -141,7 +141,6 @@ ML-Assignment2-Binary_Classification/
 ├── data_prep.py                        # Data loading, imputation, feature engineering, scaling
 ├── train_all_models.py                 # Orchestrator — trains all 6 models via subprocess
 ├── requirements.txt                    # Python dependency configuration
-├── 2025AA05965_assignment.ipynb        # Jupyter notebook for assignment submission
 ├── README.md                           # Project documentation
 │
 ├── data/
