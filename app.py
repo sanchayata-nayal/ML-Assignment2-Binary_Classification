@@ -316,18 +316,10 @@ if df is not None:
 
             st.markdown("<br>", unsafe_allow_html=True) # Spacer
 
-            # Theme-aware text color for matplotlib charts
-            # Use explicit textColor if set, otherwise infer from theme.base
-            _theme_text = st.get_option('theme.textColor')
-            if _theme_text:
-                _text_color = _theme_text
-            else:
-                _theme_base = st.get_option('theme.base')
-                if _theme_base == 'dark':
-                    _text_color = '#FAFAFA'
-                else:
-                    # 'light' or None (default) → dark text
-                    _text_color = '#333333'
+            # Chart styling: self-contained backgrounds so text is always readable
+            # regardless of Streamlit light/dark theme
+            _chart_bg = '#F8F9FA'   # light neutral background
+            _text_color = '#2C3E50' # dark text — always readable on _chart_bg
 
             # Charts
             col_graph1, col_graph2 = st.columns(2)
@@ -342,8 +334,8 @@ if df is not None:
                     [f"FN\n{cm[1,0]}\n({cm[1,0]/total:.1%})", f"TP\n{cm[1,1]}\n({cm[1,1]/total:.1%})"]
                 ])
                 fig, ax = plt.subplots(figsize=(6, 5))
-                fig.patch.set_alpha(0)
-                ax.set_facecolor('none')
+                fig.patch.set_facecolor(_chart_bg)
+                ax.set_facecolor(_chart_bg)
                 sns.heatmap(
                     cm, annot=cm_labels, fmt='', cmap='RdYlGn', cbar=False, ax=ax,
                     annot_kws={"size": 13, "fontweight": "bold"},
@@ -368,8 +360,8 @@ if df is not None:
                 metrics_df_plot = pd.DataFrame(metrics_data)
                 
                 fig2, ax2 = plt.subplots(figsize=(6, 5))
-                fig2.patch.set_alpha(0)
-                ax2.set_facecolor('none')
+                fig2.patch.set_facecolor(_chart_bg)
+                ax2.set_facecolor(_chart_bg)
                 
                 # Create Horizontal Bar Plot for better label readability
                 bar_plot = sns.barplot(
