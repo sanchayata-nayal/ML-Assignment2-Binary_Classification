@@ -86,26 +86,27 @@ The following table presents the performance metrics derived from the **held-out
 
 The repository is organized to facilitate reproducibility and deployment:
 
-```
-├── app.py                 # Streamlit application (inference + visualization)
-├── data_prep.py           # Data loading, imputation, feature engineering, scaling
-├── train_all_models.py    # Orchestrator -- trains all 6 models via subprocess
-├── requirements.txt       # Dependency configuration
-├── data/
-│   ├── framingham_heart_study.csv   # Original dataset (4,240 samples)
-│   ├── train_framingham.csv         # Training split (3,392 samples)
-│   └── test_framingham.csv          # Test split (848 samples)
-├── model/
-│   ├── logistic_regression.py       # LR training pipeline (BalancedBagging)
-│   ├── decision_tree.py             # DT training pipeline (3 strategies)
-│   ├── knn.py                       # KNN training pipeline (7 strategies)
-│   ├── naive_bayes.py               # NB training pipeline (BalancedBagging)
-│   ├── random_forest.py             # RF training pipeline (BalancedBagging)
-│   ├── xgboost_model.py             # XGBoost training pipeline (2 strategies)
-│   ├── training_report.json         # Unified metrics report
-│   └── *.pkl                        # Persisted model artifacts
-└── README.md                        # Project documentation
-```
+| Path | Description |
+| :--- | :--- |
+| `app.py` | Streamlit web application for inference and visualization |
+| `data_prep.py` | Data loading, median imputation, feature engineering, scaling |
+| `train_all_models.py` | Orchestrator -- trains all 6 models via subprocess |
+| `requirements.txt` | Python dependency configuration |
+| `2025AA05965_assignment.ipynb` | Jupyter notebook for assignment submission |
+| `README.md` | Project documentation |
+| **data/** | |
+| `data/framingham_heart_study.csv` | Original Framingham dataset (4,240 samples) |
+| `data/train_framingham.csv` | Training split (3,392 samples) |
+| `data/test_framingham.csv` | Test split (848 samples) |
+| **model/** | |
+| `model/logistic_regression.py` | LR training pipeline (BalancedBagging) |
+| `model/decision_tree.py` | DT training pipeline (3 strategies: BB, EE, RUSBoost) |
+| `model/knn.py` | KNN training pipeline (7 strategies) |
+| `model/naive_bayes.py` | NB training pipeline (BalancedBagging) |
+| `model/random_forest.py` | RF training pipeline (BalancedBagging) |
+| `model/xgboost_model.py` | XGBoost training pipeline (2 strategies) |
+| `model/training_report.json` | Unified metrics report (auto-generated) |
+| `model/*.pkl` | Persisted model artifacts (auto-generated) |
 
 ## 7. Technical Implementation
 
@@ -151,3 +152,21 @@ The interactive dashboard is built using Streamlit. To launch the application lo
 ```bash
 streamlit run app.py
 ```
+
+## 8. Overall Conclusion
+
+This project demonstrates a comprehensive, end-to-end machine learning pipeline for predicting the ten-year risk of Coronary Heart Disease using the Framingham Heart Study dataset. Across all six classification algorithms -- Logistic Regression, Decision Tree, k-Nearest Neighbors, Naive Bayes, Random Forest, and XGBoost -- the primary bottleneck was the severe class imbalance (~85:15 negative-to-positive ratio), which renders naive accuracy misleading and demands specialized techniques.
+
+**Key takeaways:**
+
+- **BalancedBagging emerged as the universally best imbalance-handling strategy**, winning the internal competition in every model family over SMOTE, SMOTEENN, SMOTETomek, EasyEnsemble, and RUSBoost. This suggests that for moderately sized tabular datasets with low positive prevalence, bootstrap-based undersampling provides the most stable and generalizable corrections.
+
+- **Threshold optimization was indispensable.** Moving away from the default 0.5 decision boundary -- and instead tuning thresholds on a held-out validation set -- yielded F1 improvements of 30-80% across all models. The optimal thresholds ranged from 0.37 (Logistic Regression) to 0.565 (Decision Tree), reflecting each algorithm's unique probability calibration characteristics.
+
+- **Simpler models matched or outperformed complex ones.** Logistic Regression achieved the best AUC (0.7008) and Recall (86.1%), while KNN achieved the best F1-Score (0.3587). Neither XGBoost nor Random Forest -- despite their capacity for modeling non-linear interactions -- could surpass these simpler baselines. This indicates that the CHD risk signal in the Framingham dataset is predominantly linear and well-captured by straightforward models augmented with good feature engineering.
+
+- **Feature engineering from 15 to 40 variables** (pulse pressure, MAP, age interactions, clinical flags, log transforms, risk factor counts) enriched the input representation and contributed to improved performance across all model families.
+
+- **The best model depends on the clinical objective.** For mass screening where missing a positive case is unacceptable, Logistic Regression (86.1% recall) is the clear choice. For balanced precision-recall performance, KNN (F1=0.3587) leads. For minimizing false alarms in a confirmatory setting, Naive Bayes (27.4% precision, 75.2% accuracy) is preferred. No single model dominates all evaluation criteria, reinforcing the importance of aligning model selection with the specific healthcare deployment context.
+
+In summary, this project validates that thoughtful data preprocessing, domain-driven feature engineering, systematic imbalance handling, and principled threshold calibration collectively matter more than algorithm complexity for real-world medical risk prediction.

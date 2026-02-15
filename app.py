@@ -316,6 +316,13 @@ if df is not None:
 
             st.markdown("<br>", unsafe_allow_html=True) # Spacer
 
+            # Theme-aware text color for matplotlib charts
+            _theme_base = st.get_option('theme.base')
+            if _theme_base == 'light':
+                _text_color = '#333333'
+            else:
+                _text_color = '#FAFAFA'
+
             # Charts
             col_graph1, col_graph2 = st.columns(2)
             
@@ -323,11 +330,12 @@ if df is not None:
                 st.markdown('<div class="plot-title">Confusion Matrix</div>', unsafe_allow_html=True)
                 cm = confusion_matrix(y_true, y_pred)
                 fig, ax = plt.subplots(figsize=(6, 5))
-                # Transparent background for dark mode compatibility
                 fig.patch.set_alpha(0)
+                ax.set_facecolor('none')
                 sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False, ax=ax, annot_kws={"size": 14})
-                plt.ylabel('Actual Condition (0=No, 1=Yes)', fontsize=10)
-                plt.xlabel('Predicted Condition (0=No, 1=Yes)', fontsize=10)
+                ax.set_ylabel('Actual Condition (0=No, 1=Yes)', fontsize=10, color=_text_color)
+                ax.set_xlabel('Predicted Condition (0=No, 1=Yes)', fontsize=10, color=_text_color)
+                ax.tick_params(colors=_text_color)
                 plt.tight_layout()
                 st.pyplot(fig)
             
@@ -342,10 +350,8 @@ if df is not None:
                 metrics_df_plot = pd.DataFrame(metrics_data)
                 
                 fig2, ax2 = plt.subplots(figsize=(6, 5))
-                # Transparent background to blend with theme
                 fig2.patch.set_alpha(0)
-                fig2.patch.set_facecolor('white')
-                ax2.set_facecolor('white')
+                ax2.set_facecolor('none')
                 
                 # Create Horizontal Bar Plot for better label readability
                 bar_plot = sns.barplot(
@@ -370,14 +376,16 @@ if df is not None:
                             ha="left", 
                             va="center", 
                             fontsize=10,
-                            fontweight='bold'
+                            fontweight='bold',
+                            color=_text_color
                         )
                 
                 # Styling the plot
-                ax2.set_title("Model Performance Summary", fontsize=14, fontweight='bold', pad=15)
+                ax2.set_title("Model Performance Summary", fontsize=14, fontweight='bold', pad=15, color=_text_color)
                 ax2.set_xlim(0, 1.2) # Add headroom for labels
-                ax2.set_xlabel("Score", fontsize=11, fontweight='bold')
-                ax2.set_ylabel("Metric", fontsize=11, fontweight='bold')
+                ax2.set_xlabel("Score", fontsize=11, fontweight='bold', color=_text_color)
+                ax2.set_ylabel("Metric", fontsize=11, fontweight='bold', color=_text_color)
+                ax2.tick_params(colors=_text_color)
                 ax2.grid(axis='x', linestyle='--', alpha=0.3)
                 
                 # Remove top and right spines
